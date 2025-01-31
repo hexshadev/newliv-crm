@@ -2,6 +2,9 @@ from .models import Mensagem, Conversa, Aviso
 from django.db.models import Q
 from clientes.models import Cliente
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 def unread_messages(request):
     """Adiciona contagem de mensagens não lidas ao contexto"""
@@ -18,50 +21,22 @@ def unread_messages(request):
         return context
         
     try:
+        # Log para debug
+        logger.debug('Context processor: usuário autenticado')
+        
         # Verifica se o usuário tem perfil
         if not hasattr(request.user, 'perfil'):
+            logger.debug('Context processor: usuário sem perfil')
             return context
             
-        # Adiciona o tipo do usuário ao contexto
+        # Log do tipo de usuário
+        logger.debug(f'Context processor: tipo de usuário = {request.user.perfil.tipo}')
+        
+        # Adiciona apenas o tipo do usuário ao contexto
         context['user_tipo'] = request.user.perfil.tipo
         
-        # Apenas processa o resto se o usuário for CORRETOR
-        if request.user.perfil.tipo != 'CORRETOR':
-            return context
-            
-        # Tenta contar mensagens não lidas de forma segura
-        try:
-            context['mensagens_nao_lidas'] = Mensagem.objects.filter(
-                conversa__participantes=request.user,
-                lida=False
-            ).exclude(
-                remetente=request.user
-            ).count()
-        except:
-            pass
-            
-        # Tenta contar avisos não lidos de forma segura
-        try:
-            context['avisos_nao_lidos'] = Aviso.objects.filter(
-                Q(todos_corretores=True) | Q(corretores=request.user),
-                ativo=True,
-                lido=False
-            ).count()
-        except:
-            pass
-            
-        # Tenta contar novos leads de forma segura
-        try:
-            um_dia_atras = timezone.now() - timezone.timedelta(days=1)
-            context['novos_leads'] = Cliente.objects.filter(
-                responsavel=request.user,
-                data_atribuicao__gte=um_dia_atras
-            ).count()
-        except:
-            pass
-            
-    except Exception:
-        # Se qualquer erro ocorrer, retorna o contexto padrão
-        pass
+    except Exception as e:
+        # Log do erro
+        logger.error(f'Context processor error: {str(e)}')
         
     return context 
