@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Newliv CRM{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Dashboard</h1>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <!-- Clientes -->
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people"></i> Clientes
+                    </h5>
+                    <h2 class="card-text">{{ total_clientes }}</h2>
+                    <div class="mt-3">
+                        <small>
+                            Ativos: {{ clientes_ativos }} | 
+                            Prospectos: {{ clientes_prospectos }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Oportunidades -->
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up"></i> Oportunidades
+                    </h5>
+                    <h2 class="card-text">{{ total_oportunidades }}</h2>
+                    <div class="mt-3">
+                        <small>Em Aberto: {{ oportunidades_abertas }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Valor Total Ganho -->
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-currency-dollar"></i> Valor Total Ganho
+                    </h5>
+                    <h2 class="card-text">R$ {{ valor_total_ganho|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Oportunidades por Status -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Oportunidades por Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for status in oportunidades_por_status %}
+                                <tr>
+                                    <td>{{ status.status }}</td>
+                                    <td>{{ status.total }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Importar Leads - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+.content-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+.main-content {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+.leads-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    flex: 1;
+    min-height: 0; /* Importante para scroll vertical funcionar */
+}
+.upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.leads-list-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Importante para evitar overflow */
+}
+.leads-table-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Importante para scroll vertical funcionar */
+}
+.leads-table-container {
+    flex: 1;
+    overflow: auto;
+    border-radius: 0.375rem;
+}
+.table {
+    margin-bottom: 0;
+}
+.table th {
+    position: sticky;
+    top: 0;
+    background: var(--bs-table-bg);
+    z-index: 1;
+}
+.table td {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.table td.expandable:hover {
+    white-space: normal;
+    word-break: break-word;
+}
+/* Responsividade */
+@media (max-width: 1200px) {
+    .leads-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    .upload-section {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .upload-card {
+        flex: 1;
+        min-width: 300px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <h4 class="mb-4">Importar Leads</h4>
+        
+        <div class="leads-container">
+            <!-- Seção de Upload -->
+            <div class="upload-section">
+                <div class="card border-0 shadow-sm upload-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Upload de Arquivo</h5>
+                        
+                        <form id="uploadForm" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Arquivo de Leads</label>
+                                <input type="file" 
+                                       class="form-control" 
+                                       id="arquivo_leads" 
+                                       name="arquivo_leads"
+                                       accept=".xlsx,.csv">
+                                <div class="form-text">
+                                    Formatos aceitos: Excel (.xlsx) ou CSV (.csv)
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-upload me-2"></i>
+                                Processar Arquivo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Instruções</h5>
+                        <p class="small mb-2">O arquivo deve conter as seguintes colunas:</p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li><strong>Nome</strong> (obrigatório)</li>
+                            <li>Telefone</li>
+                            <li>Email</li>
+                            <li>Possui CNPJ</li>
+                            <li>Profissão</li>
+                            <li>Plano Atual</li>
+                            <li>Idades</li>
+                            <li>Observações</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção da Lista de Leads -->
+            <div class="leads-list-section">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Leads Importados</h5>
+                            <button type="button" 
+                                    class="btn btn-success"
+                                    id="btnDistribuir"
+                                    disabled>
+                                <i class="bi bi-share me-2"></i>
+                                Distribuir Leads
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="leads-table-wrapper">
+                        <div class="leads-table-container">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px">
+                                            <input type="checkbox" 
+                                                   class="form-check-input" 
+                                                   id="checkTodos">
+                                        </th>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Email</th>
+                                        <th>Tipo</th>
+                                        <th>Profissão</th>
+                                        <th>Plano Atual</th>
+                                        <th>Idades</th>
+                                        <th>Observações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leadsTableBody">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-5">
+                                            <i class="bi bi-cloud-upload display-4"></i>
+                                            <p class="mb-0 mt-2">Faça upload de um arquivo para importar leads</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Distribuição -->
+<div class="modal fade" id="modalDistribuir" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Distribuir Leads</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label">Tipo de Distribuição</label>
+                    <div class="btn-group w-100">
+                        <input type="radio" 
+                               class="btn-check" 
+                               name="tipoDistribuicao" 
+                               id="igual" 
+                               value="igual" 
+                               checked>
+                        <label class="btn btn-outline-primary" for="igual">
+                            <i class="bi bi-distribute-horizontal me-2"></i>
+                            Distribuição Igual
+                        </label>
+                        
+                        <input type="radio" 
+                               class="btn-check" 
+                               name="tipoDistribuicao" 
+                               id="manual" 
+                               value="manual">
+                        <label class="btn btn-outline-primary" for="manual">
+                            <i class="bi bi-sliders me-2"></i>
+                            Distribuição Manual
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Selecione os Corretores</label>
+                    <div id="corretoresContainer" class="list-group">
+                        <!-- Lista de corretores será carregada aqui -->
+                    </div>
+                </div>
+                
+                <div id="distribuicaoManual" style="display: none;">
+                    <div class="alert alert-info">
+                        Defina a quantidade de leads para cada corretor:
+                    </div>
+                    <div id="qtdLeadsContainer">
+                        <!-- Campos de quantidade serão adicionados aqui -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="distribuirLeads()">
+                    <i class="bi bi-check-lg me-2"></i>
+                    Confirmar Distribuição
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let leadsImportados = [];
+let corretoresAtivos = [];
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const btnSubmit = this.querySelector('button[type="submit"]');
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+    
+    fetch('/api/processar-upload-leads/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) throw new Error(data.error);
+        
+        leadsImportados = data.leads;
+        atualizarTabelaLeads();
+        document.getElementById('btnDistribuir').disabled = false;
+        
+        if (data.warnings) {
+            alert('Arquivo processado com avisos:\n\n' + data.warnings.join('\n'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao processar arquivo: ' + error.message);
+    })
+    .finally(() => {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="bi bi-upload me-2"></i>Processar Arquivo';
+    });
+});
+
+function atualizarTabelaLeads() {
+    const tbody = document.getElementById('leadsTableBody');
+    
+    if (!leadsImportados.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                    <i class="bi bi-cloud-upload display-4"></i>
+                    <p class="mb-0 mt-2">Faça upload de um arquivo para importar leads</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = leadsImportados.map((lead, index) => `
+        <tr>
+            <td>
+                <input type="checkbox" 
+                       class="form-check-input lead-check" 
+                       value="${index}"
+                       checked>
+            </td>
+            <td class="expandable">${lead.nome || ''}</td>
+            <td>${lead.telefone || ''}</td>
+            <td class="expandable">${lead.email || ''}</td>
+            <td>${lead.possui_cnpj === 'SIM' ? 'PJ' : 'PF'}</td>
+            <td class="expandable">${lead.profissao || ''}</td>
+            <td class="expandable">${lead.plano_atual || ''}</td>
+            <td>${lead.idades || ''}</td>
+            <td class="expandable">${lead.observacoes || ''}</td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('checkTodos').addEventListener('change', function() {
+    document.querySelectorAll('.lead-check').forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+document.getElementById('btnDistribuir').addEventListener('click', function() {
+    carregarCorretores();
+});
+
+function carregarCorretores() {
+    fetch('/api/corretores-ativos/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            
+            corretoresAtivos = data;
+            const container = document.getElementById('corretoresContainer');
+            
+            container.innerHTML = corretoresAtivos.map(corretor => `
+                <label class="list-group-item">
+                    <input class="form-check-input me-2 corretor-check" 
+                           type="checkbox" 
+                           value="${corretor.id}">
+                    ${corretor.nome}
+                    <small class="text-muted ms-2">
+                        (${corretor.total_leads} leads atualmente)
+                    </small>
+                </label>
+            `).join('');
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalDistribuir'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar corretores: ' + error.message);
+        });
+}
+
+// Controle da distribuição manual
+document.querySelectorAll('input[name="tipoDistribuicao"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const container = document.getElementById('distribuicaoManual');
+        container.style.display = this.value === 'manual' ? 'block' : 'none';
+        
+        if (this.value === 'manual') {
+            atualizarCamposQuantidade();
+        }
+    });
+});
+
+function atualizarCamposQuantidade() {
+    const container = document.getElementById('qtdLeadsContainer');
+    const corretoresSelecionados = Array.from(document.querySelectorAll('.corretor-check:checked'));
+    const leadsDisponiveis = document.querySelectorAll('.lead-check:checked').length;
+    const qtdPorCorretor = Math.floor(leadsDisponiveis / corretoresSelecionados.length);
+    
+    container.innerHTML = corretoresSelecionados.map(check => {
+        const corretor = corretoresAtivos.find(c => c.id === parseInt(check.value));
+        return `
+            <div class="mb-3">
+                <label class="form-label">${corretor.nome}</label>
+                <input type="number" 
+                       class="form-control qtd-leads" 
+                       data-corretor="${corretor.id}"
+                       min="0"
+                       max="${leadsDisponiveis}"
+                       value="${qtdPorCorretor}">
+            </div>
+        `;
+    }).join('');
+}
+
+// Atualiza campos de quantidade quando corretores são selecionados
+document.getElementById('corretoresContainer').addEventListener('change', function(e) {
+    if (e.target.classList.contains('corretor-check')) {
+        if (document.getElementById('manual').checked) {
+            atualizarCamposQuantidade();
+        }
+    }
+});
+
+function distribuirLeads() {
+    const corretoresSelecionados = Array.from(document.querySelectorAll('.corretor-check:checked'))
+        .map(check => parseInt(check.value));
+    
+    if (!corretoresSelecionados.length) {
+        alert('Selecione pelo menos um corretor');
+        return;
+    }
+    
+    const leadsSelecionados = Array.from(document.querySelectorAll('.lead-check:checked'))
+        .map(check => leadsImportados[parseInt(check.value)]);
+    
+    if (!leadsSelecionados.length) {
+        alert('Selecione pelo menos um lead');
+        return;
+    }
+    
+    const tipoDistribuicao = document.querySelector('input[name="tipoDistribuicao"]:checked').value;
+    const data = {
+        leads: leadsSelecionados,
+        corretores: corretoresSelecionados,
+        tipoDistribuicao: tipoDistribuicao
+    };
+    
+    if (tipoDistribuicao === 'manual') {
+        const quantidades = {};
+        document.querySelectorAll('.qtd-leads').forEach(input => {
+            const corretor = input.dataset.corretor;
+            const quantidade = parseInt(input.value) || 0;
+            if (quantidade > 0) {
+                quantidades[`qtd_${corretor}`] = quantidade;
+            }
+        });
+        Object.assign(data, quantidades);
+    }
+    
+    console.log('Dados a serem enviados:', data); // Debug
+    
+    fetch('/api/distribuir-leads-importados/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Erro ao distribuir leads');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) throw new Error(data.error);
+        
+        const mensagem = `Leads distribuídos com sucesso!\n\n` +
+                        `Total de leads: ${data.total}\n` +
+                        `Leads distribuídos: ${data.distribuidos}` +
+                        (data.erros ? `\n\nErros:\n${data.erros.join('\n')}` : '');
+        
+        alert(mensagem);
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Erro completo:', error);
+        alert('Erro ao distribuir leads: ' + error.message);
+    });
+}
+</script>
+{% endblock %} 

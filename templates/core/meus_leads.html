@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meus Leads - Newliv CRM{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content p-4">
+        <!-- Filtros e Pesquisa -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary {% if not status_atual %}active{% endif %}" 
+                            onclick="window.location.href='{% url 'meus_leads' %}'">
+                        <i class="bi bi-list-ul me-1"></i>
+                        Todos
+                    </button>
+                    <button type="button" class="btn btn-outline-warning {% if status_atual == 'SEM_CONTATO' %}active{% endif %}" 
+                            onclick="window.location.href='{% url 'meus_leads' %}?status=SEM_CONTATO'">
+                        <i class="bi bi-telephone-x me-1"></i>
+                        Sem Contato
+                    </button>
+                    <button type="button" class="btn btn-outline-info {% if status_atual == 'EM_NEGOCIACAO' %}active{% endif %}" 
+                            onclick="window.location.href='{% url 'meus_leads' %}?status=EM_NEGOCIACAO'">
+                        <i class="bi bi-chat-dots me-1"></i>
+                        Em Negociação
+                    </button>
+                    <button type="button" class="btn btn-outline-success {% if status_atual == 'CONTRATO_APROVADO' %}active{% endif %}" 
+                            onclick="window.location.href='{% url 'meus_leads' %}?status=CONTRATO_APROVADO'">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Contrato Aprovado
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar lead...">
+                    <button class="btn btn-outline-primary" type="button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Leads -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people text-primary me-2"></i>
+                        Meus Leads
+                    </h5>
+                    <span class="badge bg-primary">Total: {{ leads|length }}</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Lead</th>
+                            <th>Status</th>
+                            <th>Tempo Restante</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ lead.nome }}</h6>
+                                        <small class="text-muted">
+                                            {% if lead.email %}{{ lead.email }}{% endif %}
+                                            {% if lead.celular %}
+                                                {% if lead.email %} • {% endif %}
+                                                {{ lead.celular }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm status-select" 
+                                        onchange="confirmarAtualizacaoStatus({{ lead.id }}, this.value, '{{ lead.status }}')"
+                                        {% if lead.status_alterado %}disabled{% endif %}>
+                                    <option value="SEM_CONTATO" {% if lead.status == 'SEM_CONTATO' %}selected{% endif %}>
+                                        Sem Contato
+                                    </option>
+                                    <option value="EM_NEGOCIACAO" {% if lead.status == 'EM_NEGOCIACAO' %}selected{% endif %}>
+                                        Em Negociação
+                                    </option>
+                                    <option value="INFO_ERRADA" {% if lead.status == 'INFO_ERRADA' %}selected{% endif %}>
+                                        Informação Errada
+                                    </option>
+                                    <option value="CLIENTE_RECUSOU" {% if lead.status == 'CLIENTE_RECUSOU' %}selected{% endif %}>
+                                        Cliente Recusou
+                                    </option>
+                                    <option value="CONTRATO_APROVADO" {% if lead.status == 'CONTRATO_APROVADO' %}selected{% endif %}>
+                                        Contrato Aprovado
+                                    </option>
+                                    <option value="PERDIDO" {% if lead.status == 'PERDIDO' %}selected{% endif %}>
+                                        Perdido
+                                    </option>
+                                </select>
+                                {% if lead.status_alterado %}
+                                <small class="text-muted d-block mt-1">Limite de alterações atingido</small>
+                                {% else %}
+                                <small class="text-muted d-block mt-1">Alterações restantes: {{ 2|add:"-1"|add:"-lead.alteracoes_status" }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.status == 'SEM_CONTATO' %}
+                                    {% if lead.tempo_expiracao == "Expirado" %}
+                                        <span class="badge bg-danger">{{ lead.tempo_expiracao }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ lead.tempo_expiracao }} restantes</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if lead.celular %}
+                                    <a href="javascript:void(0)" 
+                                       onclick="abrirWhatsApp('{{ lead.celular }}')"
+                                       class="btn btn-sm btn-outline-success"
+                                       title="WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary"
+                                            onclick="copiarTelefone('{{ lead.celular }}')"
+                                            title="Ligar">
+                                        <i class="bi bi-telephone"></i>
+                                    </button>
+                                    {% endif %}
+                                    {% if lead.email %}
+                                    <a href="mailto:{{ lead.email }}"
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Email">
+                                        <i class="bi bi-envelope"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox display-4"></i>
+                                <p class="mb-0 mt-2">Nenhum lead encontrado</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agendar Ação -->
+<div class="modal fade" id="modalAgendarAcao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agendar Ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgendarAcao">
+                    <input type="hidden" id="leadId" name="leadId">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Ação</label>
+                        <select class="form-select" id="tipoAcao" name="tipoAcao" required>
+                            <option value="LIGACAO">Ligação</option>
+                            <option value="VISITA">Visita</option>
+                            <option value="REUNIAO">Reunião</option>
+                            <option value="EMAIL">E-mail</option>
+                            <option value="WHATSAPP">WhatsApp</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data e Hora</label>
+                        <input type="datetime-local" class="form-control" id="dataAcao" name="dataAcao" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="obsAcao" name="obsAcao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarAcao()">Agendar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de Sucesso -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toastSucesso" class="toast align-items-center text-white bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMensagem"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+{% if user.punicao.em_punicao %}
+<div class="alert alert-danger mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Você está em período de punição!</strong>
+    <p class="mb-0">
+        Você não pode receber novos leads até {{ user.punicao.fim_punicao|date:'d/m/Y H:i' }}.
+        Motivo: Devolução excessiva de leads (3 ou mais devoluções).
+    </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.lead-avatar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-select {
+    min-width: 160px;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-group .btn i {
+    font-size: 1rem;
+}
+
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarAtualizacaoStatus(leadId, novoStatus, statusAtual) {
+    if (confirm('Tem certeza que deseja alterar o status? Esta ação não poderá ser desfeita.')) {
+        atualizarStatus(leadId, novoStatus);
+    } else {
+        // Restaura o valor anterior no select
+        document.querySelector(`select[onchange*="${leadId}"]`).value = statusAtual;
+    }
+}
+
+function atualizarStatus(leadId, novoStatus) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/api/atualizar-status-lead/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            lead_id: leadId,
+            status: novoStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        const toast = new bootstrap.Toast(document.getElementById('toastSucesso'));
+        document.getElementById('toastMensagem').textContent = 'Status atualizado com sucesso!';
+        toast.show();
+        setTimeout(() => location.reload(), 1000);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar status: ' + error.message);
+    });
+}
+
+function atualizarTempoExpiracao() {
+    const elementos = document.querySelectorAll('.tempo-expiracao');
+    const TEMPO_LIMITE = 6 * 60 * 60 * 1000; // 6 horas em milissegundos
+
+    elementos.forEach(elemento => {
+        const dataCriacao = new Date(elemento.dataset.tempoCriacao);
+        const agora = new Date();
+        const tempoPassado = agora - dataCriacao;
+        const tempoRestante = TEMPO_LIMITE - tempoPassado;
+
+        const badge = elemento.querySelector('.badge');
+        
+        if (tempoRestante <= 0) {
+            badge.className = 'badge bg-danger';
+            badge.textContent = 'Expirado';
+        } else {
+            const horas = Math.floor(tempoRestante / (60 * 60 * 1000));
+            const minutos = Math.floor((tempoRestante % (60 * 60 * 1000)) / (60 * 1000));
+            
+            badge.className = 'badge bg-warning';
+            badge.textContent = `${horas}h ${minutos}m restantes`;
+        }
+    });
+}
+
+// Atualiza o tempo a cada minuto
+setInterval(atualizarTempoExpiracao, 60000);
+// Primeira atualização imediata
+atualizarTempoExpiracao();
+
+function abrirWhatsApp(telefone) {
+    // Remove todos os caracteres não numéricos
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    
+    // Verifica se o número começa com '55' (código do Brasil)
+    const numeroPrefixado = numeroLimpo.startsWith('55') ? numeroLimpo : `55${numeroLimpo}`;
+    
+    // Verifica se o número tem o formato correto (com DDD)
+    if (numeroPrefixado.length < 12) {
+        alert('Número de telefone inválido ou incompleto');
+        return;
+    }
+    
+    // Abre o WhatsApp com o número formatado
+    window.open(`https://wa.me/${numeroPrefixado}`, '_blank');
+}
+
+function copiarTelefone(telefone) {
+    // Remove todos os caracteres não numéricos
+    const numeroLimpo = telefone.replace(/\D/g, '');
+    
+    navigator.clipboard.writeText(numeroLimpo).then(() => {
+        const toast = new bootstrap.Toast(document.getElementById('toastSucesso'));
+        document.getElementById('toastMensagem').textContent = 'Telefone copiado!';
+        toast.show();
+    });
+}
+
+function agendarAcao(leadId) {
+    document.getElementById('leadId').value = leadId;
+    document.getElementById('dataAcao').value = new Date().toISOString().slice(0, 16);
+    const modal = new bootstrap.Modal(document.getElementById('modalAgendarAcao'));
+    modal.show();
+}
+
+function salvarAcao() {
+    const formData = new FormData(document.getElementById('formAgendarAcao'));
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/api/agendar-acao/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        const toast = new bootstrap.Toast(document.getElementById('toastSucesso'));
+        document.getElementById('toastMensagem').textContent = 'Ação agendada com sucesso!';
+        toast.show();
+        setTimeout(() => location.reload(), 1000);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao agendar ação');
+    });
+}
+
+// Filtro de busca
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const searchText = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const leadName = row.querySelector('h6').textContent.toLowerCase();
+        const leadEmail = row.querySelector('small')?.textContent.toLowerCase() || '';
+        const shouldShow = leadName.includes(searchText) || leadEmail.includes(searchText);
+        row.style.display = shouldShow ? '' : 'none';
+    });
+});
+</script>
+{% endblock %} 

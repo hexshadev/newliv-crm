@@ -1,0 +1,538 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css" rel="stylesheet">
+<style>
+:root {
+    --chat-primary: #4e73df;
+    --chat-bg: #f8f9fc;
+    --chat-border: #e3e6f0;
+}
+
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+}
+
+.chat-container {
+    display: flex;
+    height: calc(100vh - 90px);
+    background: var(--chat-bg);
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.chat-sidebar {
+    width: 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.chat-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--chat-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chat-item:hover {
+    background: rgba(78, 115, 223, 0.05);
+}
+
+.chat-item.active {
+    background: rgba(78, 115, 223, 0.1);
+    border-left: 3px solid var(--chat-primary);
+}
+
+.chat-main {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--chat-border);
+    background: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: var(--chat-bg);
+}
+
+.message {
+    margin-bottom: 1rem;
+    max-width: 80%;
+}
+
+.message.sent {
+    margin-left: auto;
+}
+
+.message.received {
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.message.sent .message-content {
+    background: var(--chat-primary);
+    color: white;
+    border-top-right-radius: 4px;
+}
+
+.message.received .message-content {
+    background: white;
+    border: 1px solid var(--chat-border);
+    border-top-left-radius: 4px;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.3rem;
+}
+
+.message.sent .message-time {
+    text-align: right;
+}
+
+.chat-input {
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid var(--chat-border);
+    border-radius: 0 0 12px 12px;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 0.8rem;
+    background: var(--chat-bg);
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--chat-border);
+}
+
+.chat-input textarea {
+    flex: 1;
+    border: none;
+    background: transparent;
+    resize: none;
+    padding: 0.5rem;
+    min-height: 40px;
+    max-height: 120px;
+}
+
+.chat-input textarea:focus {
+    outline: none;
+}
+
+.chat-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.chat-actions button {
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.chat-actions button:hover {
+    background: rgba(78, 115, 223, 0.1);
+    color: var(--chat-primary);
+}
+
+.message-attachment {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+.unread-badge {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--chat-primary);
+    display: inline-block;
+    margin-left: 0.5rem;
+    box-shadow: 0 0 0 2px white;
+}
+
+#previewAnexo {
+    background: var(--chat-bg);
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.emoji-picker {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% csrf_token %}
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <div class="page-header p-4 bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-2 fw-bold">Chat</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>
+                        Converse com outros usuários
+                    </p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovaConversa">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Nova Conversa
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <!-- Lista de Conversas -->
+            <div class="chat-sidebar">
+                <div class="chat-list">
+                    {% for conversa in conversas %}
+                    <div class="chat-item {% if conversa.id == conversa_atual.id %}active{% endif %}" data-conversa-id="{{ conversa.id }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 fw-semibold">
+                                    {% for participante in conversa.participantes.all %}
+                                        {% if participante != request.user %}
+                                            {{ participante.get_full_name }}
+                                        {% endif %}
+                                    {% endfor %}
+                                </h6>
+                                <small class="text-muted d-flex align-items-center">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ conversa.ultima_mensagem|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            {% if conversa.mensagens.filter.exists %}
+                            <span class="unread-badge"></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted p-4">
+                        <i class="bi bi-chat-dots mb-3" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                        <p class="mb-0">Nenhuma conversa iniciada</p>
+                        <small class="text-muted">Clique em Nova Conversa para começar</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Área Principal do Chat -->
+            <div class="chat-main">
+                {% if conversa_atual %}
+                <div class="chat-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-semibold">
+                                {% for participante in conversa_atual.participantes.all %}
+                                    {% if participante != request.user %}
+                                        {{ participante.get_full_name }}
+                                    {% endif %}
+                                {% endfor %}
+                            </h6>
+                            <small class="text-muted">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 8px; color: #28a745;"></i>
+                                Online
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="chat-messages" id="chatMessages">
+                    <!-- As mensagens serão carregadas aqui via JavaScript -->
+                </div>
+
+                {% if conversa_atual %}
+                <div class="chat-input">
+                    <div id="previewAnexo" class="d-none">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-paperclip me-2"></i>
+                                <span id="nomeAnexo"></span>
+                            </div>
+                            <button type="button" class="btn btn-link text-danger p-0" onclick="removerAnexo()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea id="mensagem" class="form-control" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                        <div class="chat-actions">
+                            <button type="button" onclick="document.getElementById('anexo').click()">
+                                <i class="bi bi-paperclip"></i>
+                            </button>
+                            <button type="button" onclick="toggleEmojiPicker()">
+                                <i class="bi bi-emoji-smile"></i>
+                            </button>
+                            <button type="button" class="btn btn-primary rounded-circle" onclick="enviarMensagem()">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                        <input type="file" id="anexo" class="d-none" onchange="previewAnexo(this)">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Conversa -->
+<div class="modal fade" id="modalNovaConversa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Conversa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Selecione o usuário</label>
+                    <select class="form-select" id="selectUsuario">
+                        <option value="">Selecione...</option>
+                        {% for usuario in usuarios %}
+                        <option value="{{ usuario.id }}">{{ usuario.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="text-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="iniciarConversa()">Iniciar Conversa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const conversaAtual = '{% if conversa_atual %}{{ conversa_atual.id }}{% else %}null{% endif %}';
+    let picker = null;
+
+    function carregarMensagens() {
+        if (conversaAtual === 'null') return;
+
+        fetch(`/chat/mensagens/${conversaAtual}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = '';
+                    
+                    data.mensagens.forEach(msg => {
+                        const msgElement = document.createElement('div');
+                        msgElement.className = `message ${msg.e_remetente ? 'sent' : 'received'}`;
+                        
+                        let html = `
+                            <div class="message-content">
+                                ${msg.e_remetente ? '' : `<small class="text-muted">${msg.remetente}</small><br>`}
+                                ${msg.conteudo}
+                            </div>
+                            <div class="message-time">
+                                ${msg.data_envio}
+                            </div>
+                        `;
+                        
+                        if (msg.anexo) {
+                            html += `
+                                <div class="message-attachment">
+                                    <i class="bi bi-file-earmark"></i>
+                                    <a href="${msg.anexo}" target="_blank" class="text-reset">Anexo</a>
+                                </div>
+                            `;
+                        }
+                        
+                        msgElement.innerHTML = html;
+                        container.appendChild(msgElement);
+                    });
+                    
+                    container.scrollTop = container.scrollHeight;
+                }
+            })
+            .catch(error => console.error('Erro ao carregar mensagens:', error));
+    }
+
+    function enviarMensagem() {
+        if (conversaAtual === 'null') return;
+
+        const mensagemInput = document.getElementById('mensagem');
+        const anexoInput = document.getElementById('anexo');
+        const mensagem = mensagemInput.value.trim();
+        
+        if (!mensagem && !anexoInput.files[0]) return;
+        
+        const formData = new FormData();
+        formData.append('conversa_id', conversaAtual);
+        formData.append('conteudo', mensagem);
+        
+        if (anexoInput.files[0]) {
+            formData.append('anexo', anexoInput.files[0]);
+        }
+        
+        fetch('/chat/enviar/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mensagemInput.value = '';
+                anexoInput.value = '';
+                document.getElementById('previewAnexo').classList.add('d-none');
+                carregarMensagens();
+            }
+        })
+        .catch(error => console.error('Erro ao enviar mensagem:', error));
+    }
+
+    // Inicializa o seletor de emojis
+    picker = new EmojiMart.Picker({
+        onEmojiSelect: function(emoji) {
+            const mensagemInput = document.getElementById('mensagem');
+            mensagemInput.value += emoji.native;
+        }
+    });
+
+    // Carrega mensagens iniciais e configura atualização
+    if (conversaAtual !== 'null') {
+        carregarMensagens();
+        setInterval(carregarMensagens, 5000);
+    }
+
+    // Configura o envio de mensagem com Enter
+    const mensagemInput = document.getElementById('mensagem');
+    if (mensagemInput) {
+        mensagemInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarMensagem();
+            }
+        });
+    }
+
+    // Torna as funções globais
+    window.enviarMensagem = enviarMensagem;
+    window.toggleEmojiPicker = function() {
+        const emojiContainer = document.querySelector('.emoji-picker');
+        if (emojiContainer) {
+            emojiContainer.remove();
+        } else {
+            const container = document.createElement('div');
+            container.className = 'emoji-picker';
+            container.appendChild(picker);
+            document.querySelector('.chat-input').appendChild(container);
+        }
+    };
+    
+    window.previewAnexo = function(input) {
+        if (input.files && input.files[0]) {
+            const arquivo = input.files[0];
+            document.getElementById('nomeAnexo').textContent = arquivo.name;
+            document.getElementById('previewAnexo').classList.remove('d-none');
+        }
+    };
+    
+    window.removerAnexo = function() {
+        document.getElementById('anexo').value = '';
+        document.getElementById('previewAnexo').classList.add('d-none');
+    };
+
+    // Adiciona função para iniciar nova conversa
+    window.iniciarConversa = function() {
+        const participanteId = document.getElementById('selectUsuario').value;
+        if (!participanteId) return;
+        
+        const formData = new FormData();
+        formData.append('participante_id', participanteId);
+        
+        fetch('/chat/criar/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.conversa_id) {
+                window.location.href = `/chat/${data.conversa_id}/`;
+            }
+        })
+        .catch(error => console.error('Erro ao criar conversa:', error));
+    };
+
+    // Adiciona evento de clique nas conversas
+    document.querySelectorAll('.chat-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            const conversaId = this.dataset.conversaId;
+            if (conversaId) {
+                window.location.href = `/chat/${conversaId}/`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

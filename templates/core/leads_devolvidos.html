@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Leads Devolvidos - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+}
+
+.content-area {
+    flex: 1;
+    padding: 1.5rem;
+    overflow: auto;
+}
+
+.card {
+    height: 100%;
+    margin-bottom: 0;
+}
+
+.table-container {
+    max-height: calc(100vh - 300px);
+    overflow: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header p-4 bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-2 fw-bold">Leads Devolvidos</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-arrow-return-left me-2"></i>
+                        Leads que precisam ser redistribuídos
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-container">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4">Lead</th>
+                                    <th>Email</th>
+                                    <th>Telefone</th>
+                                    <th>Último Responsável</th>
+                                    <th>Data Devolução</th>
+                                    <th class="text-end pe-4">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in leads %}
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle p-2 me-3">
+                                                <i class="bi bi-person text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ lead.nome }}</h6>
+                                                <small class="text-muted">ID: {{ lead.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ lead.email }}</td>
+                                    <td>{{ lead.telefone }}</td>
+                                    <td>
+                                        {% if lead.ultimo_responsavel %}
+                                            {{ lead.ultimo_responsavel.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ lead.data_devolucao|date:"d/m/Y H:i" }}</td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalRedistribuir"
+                                                    data-lead-id="{{ lead.id }}"
+                                                    data-lead-nome="{{ lead.nome }}">
+                                                <i class="bi bi-share me-2"></i>
+                                                Redistribuir
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-emoji-smile mb-3" style="font-size: 2rem;"></i>
+                                            <p class="mb-0">Não há leads devolvidos no momento!</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Redistribuir -->
+<div class="modal fade" id="modalRedistribuir" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Redistribuir Lead</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Selecione o corretor para redistribuir o lead <strong id="leadNome"></strong>:</p>
+                <form id="formRedistribuir" method="post" action="{% url 'redistribuir_lead' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="lead_id" id="leadId">
+                    <div class="mb-3">
+                        <select name="corretor_id" class="form-select" required>
+                            <option value="">Selecione um corretor...</option>
+                            {% for corretor in corretores %}
+                            <option value="{{ corretor.id }}">
+                                {{ corretor.get_full_name }} ({{ corretor.leads_ativos }} leads ativos)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalRedistribuir');
+    modal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const leadId = button.getAttribute('data-lead-id');
+        const leadNome = button.getAttribute('data-lead-nome');
+        
+        document.getElementById('leadId').value = leadId;
+        document.getElementById('leadNome').textContent = leadNome;
+    });
+});
+</script>
+{% endblock %} 

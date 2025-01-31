@@ -1,0 +1,67 @@
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filtrosModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Filtrar Leads</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filtrosForm">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="status" value="" id="statusTodos" 
+                                       {% if not status_atual %}checked{% endif %}>
+                                <label class="form-check-label" for="statusTodos">Todos</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="status" value="NOVO" id="statusNovo"
+                                       {% if status_atual == 'NOVO' %}checked{% endif %}>
+                                <label class="form-check-label" for="statusNovo">Novos</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="status" value="EM_ATENDIMENTO" id="statusAtendimento"
+                                       {% if status_atual == 'EM_ATENDIMENTO' %}checked{% endif %}>
+                                <label class="form-check-label" for="statusAtendimento">Em Atendimento</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" class="form-check-input" name="status" value="CONVERTIDO" id="statusConvertido"
+                                       {% if status_atual == 'CONVERTIDO' %}checked{% endif %}>
+                                <label class="form-check-label" for="statusConvertido">Convertidos</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Período</label>
+                        <select class="form-select" name="periodo">
+                            <option value="">Qualquer período</option>
+                            <option value="hoje">Hoje</option>
+                            <option value="7dias">Últimos 7 dias</option>
+                            <option value="30dias">Últimos 30 dias</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Interesse</label>
+                        <select class="form-select" name="interesse">
+                            <option value="">Todos os interesses</option>
+                            <option value="IMOVEL">Imóvel</option>
+                            <option value="INVESTIMENTO">Investimento</option>
+                            <option value="LOCACAO">Locação</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="aplicarFiltros()">
+                    <i class="bi bi-funnel me-2"></i>
+                    Aplicar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

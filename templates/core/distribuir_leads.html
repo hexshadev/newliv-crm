@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Distribuir Leads - Newliv CRM{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="container-fluid py-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Distribuir Leads</h4>
+            </div>
+            <div class="card-body">
+                {% if leads %}
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Selecione o Corretor</label>
+                        <select name="corretor" class="form-select" required>
+                            <option value="">Escolha um corretor...</option>
+                            {% for corretor in corretores %}
+                            <option value="{{ corretor.id }}">
+                                {{ corretor.get_full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll">
+                                            <label class="form-check-label" for="selectAll">
+                                                Selecionar Todos
+                                            </label>
+                                        </div>
+                                    </th>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Celular</th>
+                                    <th>Interesse</th>
+                                    <th>Origem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in leads %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input lead-checkbox" type="checkbox" 
+                                                   name="leads" value="{{ lead.id }}" id="lead{{ lead.id }}">
+                                        </div>
+                                    </td>
+                                    <td>{{ lead.nome }}</td>
+                                    <td>{{ lead.email }}</td>
+                                    <td>{{ lead.celular }}</td>
+                                    <td>{{ lead.get_interesse_display }}</td>
+                                    <td>{{ lead.get_origem_display }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-share"></i> Distribuir Leads Selecionados
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <h5 class="text-muted">Nenhum lead disponível para distribuição</h5>
+                    <a href="{% url 'importar_leads' %}" class="btn btn-primary mt-2">
+                        <i class="bi bi-upload"></i> Importar Leads
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.getElementsByClassName('lead-checkbox');
+    for (let checkbox of checkboxes) {
+        checkbox.checked = this.checked;
+    }
+});
+</script>
+{% endblock %} 

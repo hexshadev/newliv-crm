@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir {{ cliente.nome }} - Newliv CRM{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Confirmar Exclusão</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        Tem certeza que deseja excluir o cliente <strong>{{ cliente.nome }}</strong>?
+                        Esta ação não poderá ser desfeita.
+                    </p>
+                    
+                    {% if cliente.oportunidades.exists %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Atenção: Este cliente possui {{ cliente.oportunidades.count }} oportunidade(s) vinculada(s).
+                        Todas as oportunidades serão excluídas junto com o cliente.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'cliente_detail' cliente.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

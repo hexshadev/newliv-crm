@@ -1,0 +1,195 @@
+{% load static %}
+<!-- Sidebar -->
+<div class="sidebar bg-white border-end">
+    <div class="sidebar-header p-3 border-bottom bg-primary">
+        <div class="d-flex align-items-center">
+            {% if user.perfil.foto %}
+                <img src="{{ user.perfil.foto.url }}" alt="Foto de perfil" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                </div>
+            {% endif %}
+            <div>
+                <div class="fw-bold text-white">{{ user.get_full_name }}</div>
+                <small class="text-white-50">{{ user.perfil.get_tipo_display }}</small>
+            </div>
+            <a href="#" class="ms-auto text-white" data-bs-toggle="modal" data-bs-target="#modalEditarPerfil" title="Editar Perfil">
+                <i class="bi bi-pencil-square"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="sidebar-content">
+        <nav class="nav flex-column">
+            {% if user.perfil.tipo == 'GESTOR' %}
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 me-2"></i>
+                Dashboard
+            </a>
+            <a href="{% url 'importar_leads' %}" class="nav-link {% if request.resolver_match.url_name == 'importar_leads' %}active{% endif %}">
+                <i class="bi bi-upload me-2"></i>
+                Importar Leads
+            </a>
+            <a href="{% url 'distribuir_leads' %}" class="nav-link {% if request.resolver_match.url_name == 'distribuir_leads' %}active{% endif %}">
+                <i class="bi bi-share me-2"></i>
+                Distribuir Leads
+            </a>
+            <a href="{% url 'leads_devolvidos' %}" class="nav-link {% if request.resolver_match.url_name == 'leads_devolvidos' %}active{% endif %}">
+                <i class="bi bi-arrow-return-left me-2"></i>
+                Leads Devolvidos
+            </a>
+            <a href="{% url 'avisos_corretores' %}" class="nav-link {% if request.resolver_match.url_name == 'avisos_corretores' %}active{% endif %}">
+                <i class="bi bi-bell me-2"></i>
+                Avisos
+            </a>
+            {% else %}
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 me-2"></i>
+                Dashboard
+                {% if avisos_nao_lidos > 0 %}
+                <span class="badge bg-danger rounded-pill ms-2">{{ avisos_nao_lidos }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'meus_leads' %}" class="nav-link {% if request.resolver_match.url_name == 'meus_leads' %}active{% endif %}">
+                <i class="bi bi-person-lines-fill me-2"></i>
+                Meus Leads
+                {% if novos_leads > 0 %}
+                <span class="badge bg-primary rounded-pill ms-2">{{ novos_leads }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'agenda' %}" class="nav-link {% if request.resolver_match.url_name == 'agenda' %}active{% endif %}">
+                <i class="bi bi-calendar-event me-2"></i>
+                Agenda
+            </a>
+            {% endif %}
+            <a href="{% url 'chat' %}" class="nav-link {% if request.resolver_match.url_name == 'chat' %}active{% endif %}">
+                <i class="bi bi-chat-dots me-2"></i>
+                Chat
+                {% if mensagens_nao_lidas > 0 %}
+                <span class="badge bg-danger rounded-pill ms-2">{{ mensagens_nao_lidas }}</span>
+                {% endif %}
+            </a>
+            
+            <div class="border-top my-3"></div>
+            
+            <a href="{% url 'logout' %}" class="nav-link text-danger">
+                <i class="bi bi-box-arrow-right me-2"></i>
+                Sair
+            </a>
+        </nav>
+    </div>
+</div>
+
+<!-- Modal Editar Perfil -->
+<div class="modal fade" id="modalEditarPerfil" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Perfil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPerfil" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            {% if user.perfil.foto %}
+                                <img src="{{ user.perfil.foto.url }}" alt="Foto de perfil" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px;">
+                                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            <label for="inputFoto" class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1 shadow-sm" style="cursor: pointer;">
+                                <i class="bi bi-camera"></i>
+                            </label>
+                            <input type="file" id="inputFoto" name="foto" class="d-none" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sobrenome</label>
+                            <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="tel" class="form-control" name="telefone" value="{{ user.perfil.telefone }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Celular</label>
+                            <input type="tel" class="form-control" name="celular" value="{{ user.perfil.celular }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Senha</label>
+                            <input type="password" class="form-control" name="password" placeholder="Digite para alterar">
+                            <small class="text-muted">Deixe em branco para manter a senha atual</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarPerfil()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function salvarPerfil() {
+    const form = document.getElementById('formEditarPerfil');
+    const formData = new FormData(form);
+    
+    fetch('/atualizar-perfil/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        // Atualiza a página para mostrar as alterações
+        location.reload();
+    })
+    .catch(error => {
+        alert('Erro ao atualizar perfil: ' + error.message);
+    });
+}
+
+// Preview da foto antes do upload
+document.getElementById('inputFoto').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.querySelector('#modalEditarPerfil img') || 
+                          document.querySelector('#modalEditarPerfil div.rounded-circle');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Foto de perfil';
+                img.className = 'rounded-circle';
+                img.style = 'width: 100px; height: 100px; object-fit: cover;';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        }
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+</script>
+{% endblock %} 

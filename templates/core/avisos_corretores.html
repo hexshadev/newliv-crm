@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Avisos para Corretores - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<style>
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+}
+
+.content-area {
+    flex: 1;
+    padding: 1.5rem;
+    overflow: auto;
+}
+
+.card {
+    height: 100%;
+    margin-bottom: 0;
+}
+
+.table-container {
+    max-height: calc(100vh - 300px);
+    overflow: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header p-4 bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-2 fw-bold">Avisos para Corretores</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-bell me-2"></i>
+                        Gerencie as notificações enviadas aos corretores
+                    </p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoAviso">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Novo Aviso
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-container">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4">Título</th>
+                                    <th>Destinatários</th>
+                                    <th>Data Envio</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for aviso in avisos %}
+                                <tr data-aviso-id="{{ aviso.id }}">
+                                    <td class="px-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle p-2 me-3">
+                                                <i class="bi bi-bell text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ aviso.titulo }}</h6>
+                                                <small class="text-muted">{{ aviso.mensagem|truncatechars:50 }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if aviso.todos_corretores %}
+                                            <span class="badge bg-info">Todos os Corretores</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ aviso.corretores.count }} Corretor(es)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ aviso.data_criacao|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if aviso.ativo %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditarAviso"
+                                                    data-aviso-id="{{ aviso.id }}">
+                                                <i class="bi bi-pencil me-2"></i>
+                                                Editar
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    onclick="excluirAviso('{{ aviso.id }}')">
+                                                <i class="bi bi-trash me-2"></i>
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-bell-slash mb-3" style="font-size: 2rem;"></i>
+                                            <p class="mb-0">Nenhum aviso cadastrado!</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Aviso -->
+<div class="modal fade" id="modalNovoAviso" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Aviso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovoAviso" method="post" action="{% url 'criar_aviso' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input type="text" class="form-control" name="titulo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mensagem</label>
+                        <textarea class="form-control" name="mensagem" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="todos_corretores" id="checkTodosCorretores">
+                            <label class="form-check-label" for="checkTodosCorretores">
+                                Enviar para todos os corretores
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="seletorCorretores">
+                        <label class="form-label">Selecione os Corretores</label>
+                        <select class="form-select" name="corretores" multiple>
+                            {% for corretor in corretores %}
+                            <option value="{{ corretor.id }}">{{ corretor.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Enviar Aviso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Aviso -->
+<div class="modal fade" id="modalEditarAviso" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Aviso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarAviso" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="aviso_id" id="avisoId">
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input type="text" class="form-control" name="titulo" id="avisoTitulo" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mensagem</label>
+                        <textarea class="form-control" name="mensagem" id="avisoMensagem" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="ativo" id="avisoAtivo">
+                            <label class="form-check-label" for="avisoAtivo">
+                                Aviso Ativo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuração do Toastr
+    toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "timeOut": "3000"
+    };
+
+    // Controle do checkbox "Todos os Corretores"
+    const checkTodosCorretores = document.getElementById('checkTodosCorretores');
+    const seletorCorretores = document.getElementById('seletorCorretores');
+    
+    if (checkTodosCorretores) {
+        checkTodosCorretores.addEventListener('change', function() {
+            seletorCorretores.style.display = this.checked ? 'none' : 'block';
+        });
+    }
+    
+    // Configuração do Modal de Edição
+    const modalEditarAviso = document.getElementById('modalEditarAviso');
+    if (modalEditarAviso) {
+        modalEditarAviso.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const avisoId = button.getAttribute('data-aviso-id');
+            
+            // Carregar dados do aviso via AJAX
+            fetch(`/aviso/${avisoId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('avisoId').value = data.id;
+                    document.getElementById('avisoTitulo').value = data.titulo;
+                    document.getElementById('avisoMensagem').value = data.mensagem;
+                    document.getElementById('avisoAtivo').checked = data.ativo;
+                })
+                .catch(error => console.error('Erro:', error));
+        });
+    }
+});
+
+function excluirAviso(avisoId) {
+    if (!confirm('Tem certeza que deseja excluir este aviso?')) return;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/aviso/${avisoId}/excluir/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const avisoRow = document.querySelector(`tr[data-aviso-id="${avisoId}"]`);
+            if (avisoRow) {
+                avisoRow.remove();
+            } else {
+                location.reload(); // Recarrega a página se não encontrar a linha
+            }
+            toastr.success(data.message || 'Aviso excluído com sucesso');
+        } else {
+            throw new Error(data.error || 'Erro ao excluir aviso');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        toastr.error('Erro ao excluir aviso. Por favor, tente novamente.');
+    });
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agenda - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+.main-content {
+    padding: 1.5rem;
+    background-color: #f8f9fc;
+    min-height: 100vh;
+    width: 100%;
+    flex: 1;
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+}
+
+.page-header {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.header-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    min-width: 160px;
+    justify-content: center;
+}
+
+.header-btn i {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+.header-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-btn-primary {
+    background: #4e73df;
+    color: white;
+    border: none;
+}
+
+.header-btn-primary:hover {
+    background: #3756a8;
+}
+
+.header-btn-outline {
+    background: transparent;
+    color: #4e73df;
+    border: 1px solid #4e73df;
+}
+
+.header-btn-outline:hover {
+    background: #f8f9fc;
+}
+
+.filtros-container {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.filtro-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.filtro-btn:hover {
+    transform: translateY(-1px);
+}
+
+.filtro-btn.active {
+    background-color: #4e73df;
+    color: white;
+}
+
+.dia-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.dia-header {
+    background: #4e73df;
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dia-header i {
+    font-size: 1.5rem;
+}
+
+.acao-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    transition: all 0.2s;
+}
+
+.acao-item:last-child {
+    border-bottom: none;
+}
+
+.acao-item:hover {
+    background-color: #f8f9fc;
+}
+
+.hora-badge {
+    background: #e8eaf6;
+    color: #3f51b5;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: center;
+}
+
+.acao-tipo {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.acao-btns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.acao-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    color: #4e73df;
+    transition: all 0.2s;
+}
+
+.acao-btn:hover {
+    background: #4e73df;
+    color: white;
+    border-color: #4e73df;
+}
+
+.estado-vazio {
+    background: white;
+    border-radius: 10px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.estado-vazio i {
+    font-size: 3rem;
+    color: #b0bec5;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-2 fw-bold">Minha Agenda</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        Gerencie suas ações e compromissos
+                    </p>
+                </div>
+                <div class="header-buttons">
+                    <button class="header-btn header-btn-primary" data-bs-toggle="modal" data-bs-target="#novoLembreteModal">
+                        <i class="bi bi-plus-lg"></i>
+                        Novo Lembrete
+                    </button>
+                    <button class="header-btn header-btn-outline" data-bs-toggle="modal" data-bs-target="#syncGoogleCalendar">
+                        <i class="bi bi-google"></i>
+                        Google Calendar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filtros-container">
+            <div class="d-flex gap-2">
+                <a href="?periodo=hoje" 
+                   class="filtro-btn btn {% if periodo == 'hoje' %}active{% endif %}">
+                    <i class="bi bi-calendar-event"></i>
+                    Hoje
+                </a>
+                <a href="?periodo=semana" 
+                   class="filtro-btn btn {% if periodo == 'semana' %}active{% endif %}">
+                    <i class="bi bi-calendar-week"></i>
+                    Esta Semana
+                </a>
+                <a href="?periodo=mes" 
+                   class="filtro-btn btn {% if periodo == 'mes' %}active{% endif %}">
+                    <i class="bi bi-calendar3"></i>
+                    Este Mês
+                </a>
+                <a href="?periodo=todos" 
+                   class="filtro-btn btn {% if periodo == 'todos' %}active{% endif %}">
+                    <i class="bi bi-collection"></i>
+                    Todos
+                </a>
+            </div>
+        </div>
+        
+        {% if acoes_por_dia %}
+            {% for dia in acoes_por_dia %}
+            <div class="dia-card">
+                <div class="dia-header">
+                    <i class="bi bi-calendar3"></i>
+                    <div>
+                        <h5 class="mb-0">{{ dia.data }}</h5>
+                        {% if dia.data == hoje|date:"d/m/Y" %}
+                        <small class="badge bg-warning text-dark">Hoje</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% for acao in dia.acoes %}
+                <div class="acao-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="hora-badge">
+                                {{ acao.proxima_acao|date:"H:i" }}
+                            </div>
+                            <div>
+                                <h6 class="mb-2">{{ acao.nome }}</h6>
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if acao.celular %}
+                                    <span class="text-muted small">
+                                        <i class="bi bi-phone me-1"></i>
+                                        {{ acao.celular }}
+                                    </span>
+                                    {% endif %}
+                                    <span class="acao-tipo">
+                                        <i class="bi bi-calendar-check me-1"></i>
+                                        {{ acao.get_tipo_display }}
+                                    </span>
+                                </div>
+                                {% if acao.observacoes %}
+                                <p class="text-muted small mt-2 mb-0">
+                                    {{ acao.observacoes|truncatewords:20 }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="acao-btns">
+                            <a href="{% url 'cliente_detail' acao.pk %}" 
+                               class="acao-btn"
+                               role="button"
+                               data-bs-toggle="tooltip"
+                               data-bs-title="Ver detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button type="button"
+                                    class="acao-btn"
+                                    data-action="concluir"
+                                    data-id="{{ acao.pk }}"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-title="Marcar como concluído">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button type="button"
+                                    class="acao-btn"
+                                    data-action="editar"
+                                    data-id="{{ acao.pk }}"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="estado-vazio">
+                <i class="bi bi-calendar2-x d-block"></i>
+                <h5 class="mb-3">Nenhuma ação agendada</h5>
+                <p class="text-muted mb-4">
+                    Você não tem nenhuma ação agendada para os próximos dias.<br>
+                    Que tal começar criando um novo lembrete?
+                </p>
+                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#novoLembreteModal">
+                    <i class="bi bi-calendar-plus me-2"></i>
+                    Criar Novo Lembrete
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Novo Lembrete -->
+<div class="modal fade" id="novoLembreteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Novo Lembrete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="lembreteForm">
+                    <input type="hidden" id="lembreteId" name="lembreteId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Lead</label>
+                        <select class="form-select" name="leadId" required>
+                            <option value="">Selecione um lead</option>
+                            {% for lead in leads_disponiveis %}
+                            <option value="{{ lead.id }}">{{ lead.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Data</label>
+                        <input type="date" class="form-control" name="data" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Hora</label>
+                        <input type="time" class="form-control" name="hora" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Ação</label>
+                        <select class="form-select" name="tipo">
+                            <option value="LIGACAO">Ligação</option>
+                            <option value="VISITA">Visita</option>
+                            <option value="REUNIAO">Reunião</option>
+                            <option value="EMAIL">E-mail</option>
+                            <option value="WHATSAPP">WhatsApp</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" name="observacoes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Lembrete</label>
+                        <select class="form-select" name="lembrete">
+                            <option value="15">15 minutos antes</option>
+                            <option value="30">30 minutos antes</option>
+                            <option value="60">1 hora antes</option>
+                            <option value="1440">1 dia antes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="syncGoogle" name="syncGoogle">
+                        <label class="form-check-label" for="syncGoogle">
+                            Sincronizar com Google Calendar
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarLembrete()">
+                    <i class="bi bi-calendar-plus me-2"></i>
+                    Salvar Lembrete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Sincronização com Google Calendar -->
+<div class="modal fade" id="syncGoogleCalendar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Sincronizar com Google Calendar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if google_connected %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                    <h5>Conta Google Conectada</h5>
+                    <p class="text-muted mb-4">
+                        Sua agenda está sincronizada com o Google Calendar.
+                        Todas as ações serão automaticamente sincronizadas.
+                    </p>
+                    <button class="btn btn-danger w-100" onclick="desconectarGoogle()">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Desconectar do Google Calendar
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-google display-4 text-primary mb-3"></i>
+                    <h5>Conecte sua conta do Google</h5>
+                    <p class="text-muted mb-4">
+                        Sincronize suas ações com o Google Calendar para gerenciar tudo em um só lugar.
+                        Você poderá receber lembretes e acessar sua agenda em qualquer dispositivo.
+                    </p>
+                    <button class="btn btn-primary w-100" onclick="conectarGoogle()">
+                        <i class="bi bi-google me-2"></i>
+                        Conectar com Google Calendar
+                    </button>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <h6 class="mb-3">Configurações de Sincronização</h6>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="syncNovasAcoes" 
+                               {% if sync_config.novas_acoes %}checked{% endif %}>
+                        <label class="form-check-label" for="syncNovasAcoes">
+                            Sincronizar novas ações automaticamente
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="syncLembretes"
+                               {% if sync_config.lembretes %}checked{% endif %}>
+                        <label class="form-check-label" for="syncLembretes">
+                            Receber lembretes no Google Calendar
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="syncBidirecional"
+                               {% if sync_config.bidirecional %}checked{% endif %}>
+                        <label class="form-check-label" for="syncBidirecional">
+                            Sincronização bidirecional
+                            <small class="d-block text-muted">
+                                Alterações feitas no Google Calendar serão refletidas no CRM
+                            </small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuração global
+const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Funções de utilidade
+function showError(message) {
+    console.error('Erro:', message);
+    alert(message);
+}
+
+function getCSRFHeader() {
+    return {
+        'X-CSRFToken': CSRF_TOKEN
+    };
+}
+
+// Inicialização dos tooltips
+function initTooltips() {
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(function(el) {
+        new bootstrap.Tooltip(el, {
+            boundary: document.body
+        });
+    });
+}
+
+// Funções principais
+async function marcarConcluido(leadId) {
+    if (!confirm('Deseja marcar esta ação como concluída?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/marcar-acao-concluida/${leadId}/`, {
+            method: 'POST',
+            headers: getCSRFHeader()
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            throw new Error(data.error || 'Erro ao marcar ação como concluída');
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function editarLembrete(lembreteId) {
+    try {
+        const response = await fetch(`/get-lembrete/${lembreteId}/`);
+        const data = await response.json();
+        
+        const form = document.getElementById('lembreteForm');
+        if (!form) {
+            throw new Error('Formulário não encontrado');
+        }
+
+        // Preenche o formulário
+        Object.keys(data).forEach(function(key) {
+            const input = form.elements[key];
+            if (input) {
+                input.value = data[key];
+            }
+        });
+
+        // Abre o modal
+        const modal = new bootstrap.Modal(document.getElementById('novoLembreteModal'));
+        modal.show();
+    } catch (error) {
+        showError('Erro ao carregar dados do lembrete');
+    }
+}
+
+async function salvarLembrete(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('lembreteForm');
+    const formData = new FormData(form);
+    const lembreteId = formData.get('lembreteId');
+    const url = lembreteId ? `/atualizar-lembrete/${lembreteId}/` : '/criar-lembrete/';
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: getCSRFHeader(),
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            throw new Error(data.error || 'Erro ao salvar lembrete');
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+async function conectarGoogle() {
+    try {
+        const response = await fetch('/conectar-google/');
+        const data = await response.json();
+        
+        if (data.auth_url) {
+            location.href = data.auth_url;
+        } else {
+            throw new Error('URL de autenticação não encontrada');
+        }
+    } catch (error) {
+        showError('Erro ao conectar com Google Calendar');
+    }
+}
+
+async function desconectarGoogle() {
+    if (!confirm('Tem certeza que deseja desconectar do Google Calendar?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/desconectar-google/', {
+            method: 'POST',
+            headers: getCSRFHeader()
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            throw new Error('Erro ao desconectar');
+        }
+    } catch (error) {
+        showError('Erro ao desconectar do Google Calendar');
+    }
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa tooltips
+    initTooltips();
+
+    // Event listeners para botões de ação
+    document.querySelectorAll('.acao-btn[data-action]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const id = this.dataset.id;
+            
+            if (action === 'concluir') {
+                marcarConcluido(id);
+            } else if (action === 'editar') {
+                editarLembrete(id);
+            }
+        });
+    });
+
+    // Event listener para o formulário
+    const form = document.getElementById('lembreteForm');
+    if (form) {
+        form.addEventListener('submit', salvarLembrete);
+    }
+});
+</script>
+{% endblock %} 

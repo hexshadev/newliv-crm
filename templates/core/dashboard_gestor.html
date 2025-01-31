@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Gestor - Newliv CRM{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.css">
+<style>
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+}
+
+.content-area {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: calc(100vh - 85px);
+}
+
+.card {
+    height: 100%;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-container {
+    flex: 1;
+    overflow: auto;
+    min-height: 200px;
+    max-height: calc(100vh - 300px);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.row {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.col-md-4, .col-md-5, .col-md-7 {
+    padding-right: 1rem;
+    padding-left: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapper">
+    {% include 'core/includes/sidebar.html' %}
+    
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header p-4 bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-2 fw-bold">Dashboard</h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-speedometer2 me-2"></i>
+                        Visão geral do sistema
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'importar_leads' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Importar Leads
+                    </a>
+                    <a href="{% url 'distribuir_leads' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-share me-2"></i>
+                        Distribuir
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Cards de Métricas -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                                    <i class="bi bi-people text-primary" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Total de Leads</h6>
+                                    <h3 class="mb-0">{{ total_leads }}</h3>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-success">
+                                <i class="bi bi-graph-up me-2"></i>
+                                <span>{{ leads_novos_mes }} novos este mês</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+                                    <i class="bi bi-check-circle text-success" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Convertidos</h6>
+                                    <h3 class="mb-0">{{ leads_convertidos }}</h3>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-success">
+                                <i class="bi bi-arrow-up me-2"></i>
+                                <span>Taxa de {{ taxa_conversao }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                                    <i class="bi bi-exclamation-circle text-warning" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Sem Responsável</h6>
+                                    <h3 class="mb-0">{{ leads_sem_responsavel }}</h3>
+                                </div>
+                            </div>
+                            <a href="{% url 'distribuir_leads' %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-share me-2"></i>
+                                Distribuir Leads
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Leads por Corretor -->
+                <div class="col-md-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-people text-primary me-2"></i>
+                                Leads por Corretor
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-container">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="px-4">Corretor</th>
+                                            <th class="text-center">Total</th>
+                                            <th class="text-center">Em Atendimento</th>
+                                            <th class="text-center">Convertidos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for corretor in leads_por_corretor %}
+                                        <tr>
+                                            <td class="px-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-light rounded-circle p-2 me-3">
+                                                        <i class="bi bi-person text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">
+                                                            {{ corretor.responsavel__first_name }} 
+                                                            {{ corretor.responsavel__last_name }}
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">{{ corretor.total_leads }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning">{{ corretor.leads_em_atendimento }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success">{{ corretor.leads_convertidos }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Leads por Status -->
+                <div class="col-md-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-transparent">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bar-chart text-primary me-2"></i>
+                                Leads por Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="leadsPorStatus"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('leadsPorStatus');
+    const labels = [{% for item in leads_por_status %}"{{ item.status }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const data = [{% for item in leads_por_status %}{{ item.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    '#0d6efd',
+                    '#198754',
+                    '#dc3545',
+                    '#ffc107',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

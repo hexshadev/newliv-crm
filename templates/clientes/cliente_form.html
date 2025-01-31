@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Cliente - {{ form.instance.nome }}
+    {% else %}
+        Novo Cliente
+    {% endif %}
+    - Newliv CRM
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        {% if form.instance.pk %}
+                            Editar Cliente
+                        {% else %}
+                            Novo Cliente
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">{{ form.nome|crispy }}</div>
+                            <div class="col-md-3">{{ form.tipo|crispy }}</div>
+                            <div class="col-md-3">{{ form.cpf_cnpj|crispy }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">{{ form.email|crispy }}</div>
+                            <div class="col-md-3">{{ form.telefone|crispy }}</div>
+                            <div class="col-md-3">{{ form.celular|crispy }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">{{ form.endereco|crispy }}</div>
+                            <div class="col-md-2">{{ form.numero|crispy }}</div>
+                            <div class="col-md-4">{{ form.complemento|crispy }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.bairro|crispy }}</div>
+                            <div class="col-md-4">{{ form.cidade|crispy }}</div>
+                            <div class="col-md-2">{{ form.uf|crispy }}</div>
+                            <div class="col-md-2">{{ form.cep|crispy }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">{{ form.observacoes|crispy }}</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">{{ form.status|crispy }}</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'cliente_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

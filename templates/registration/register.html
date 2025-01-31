@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Registro - CRM NEWLIV{% endblock %}
+
+{% block content %}
+<div class="split-container">
+    <div class="split-side brand-side">
+        <div class="brand-content">
+            <h1>CRM NEWLIV</h1>
+            <p>Transformando leads em resultados</p>
+        </div>
+    </div>
+    <div class="split-side form-side">
+        <div class="form-wrapper">
+            <div class="login-box">
+                <div class="login-header">
+                    <h2 class="brand-title">Registro de Corretor</h2>
+                    <p class="brand-subtitle">Preencha os dados para criar sua conta</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="login-form needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        {{ form.email|as_crispy_field }}
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        {{ form.username|as_crispy_field }}
+                        <small class="text-muted">Obrigatório. 150 caracteres ou menos. Letras, números e @/./+/-/_ apenas.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                {{ form.password1|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-floating">
+                                {{ form.password2|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        {{ form.celular|as_crispy_field }}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>
+                            Criar Conta
+                        </button>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Voltar para Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.split-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.split-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-side {
+    background: linear-gradient(135deg, #0061f2 0%, #6900f2 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.brand-content h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -1px;
+}
+
+.brand-content p {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+.form-side {
+    background: #f8f9fa;
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 600px;
+    padding: 2rem;
+}
+
+.login-box {
+    background: white;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.brand-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0061f2;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+.login-form .form-control {
+    border-radius: 0.5rem;
+    padding: 1rem 1rem 0.5rem;
+    height: calc(3.5rem + 2px);
+    border: 2px solid #e9ecef;
+    transition: all 0.2s ease-in-out;
+}
+
+.login-form .form-control:focus {
+    border-color: #0061f2;
+    box-shadow: 0 0 0 0.25rem rgba(0, 97, 242, 0.1);
+}
+
+.login-form .form-floating > label {
+    padding: 1rem;
+}
+
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-lg {
+    padding: 1rem 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #0061f2, #6900f2);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #0052cc, #5800cc);
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: #0061f2;
+    border-color: #0061f2;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(45deg, #0061f2, #6900f2);
+    border-color: transparent;
+    transform: translateY(-1px);
+}
+
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.text-muted {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.asteriskField {
+    display: none;
+}
+
+@media (max-width: 991px) {
+    .brand-side {
+        display: none;
+    }
+    
+    .form-side {
+        background: linear-gradient(135deg, #0061f2 0%, #6900f2 100%);
+    }
+    
+    .login-box {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+}
+
+@media (max-width: 576px) {
+    .form-wrapper {
+        padding: 1rem;
+    }
+    
+    .login-box {
+        padding: 1.5rem;
+    }
+    
+    .brand-title {
+        font-size: 1.75rem;
+    }
+    
+    .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    
+    .col-md-6 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validação do formulário
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// Máscara para celular
+const celularInput = document.querySelector('#id_celular');
+if (celularInput) {
+    celularInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            if (value.length > 2) {
+                value = '(' + value.substring(0,2) + ') ' + value.substring(2);
+            }
+            if (value.length > 9) {
+                value = value.substring(0,10) + '-' + value.substring(10);
+            }
+            e.target.value = value;
+        }
+    });
+}
+</script>
+{% endblock %} 
