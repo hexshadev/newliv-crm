@@ -23,14 +23,8 @@ from django.db.models import Count, Q
 
 @login_required
 def dashboard(request):
-    """Redireciona para o dashboard apropriado baseado no tipo de usuário"""
-    if request.user.perfil.tipo == 'GESTOR':
-        return dashboard_gestor(request)
-    elif request.user.perfil.tipo == 'CORRETOR':
-        return dashboard_corretor(request)
-    else:
-        messages.error(request, 'Tipo de usuário não reconhecido.')
-        return redirect('login')
+    """View simplificada do dashboard para teste"""
+    return render(request, 'core/dashboard_simples.html')
 
 @login_required
 def dashboard_gestor(request):
