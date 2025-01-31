@@ -35,7 +35,19 @@ ALLOWED_HOSTS = ['*'] if DEBUG else os.getenv('ALLOWED_HOSTS', '').split(',')
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.newlivseguros.com',
-] if not DEBUG else []
+    'http://localhost',
+    'http://127.0.0.1',
+]
+
+# Security Settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# CSRF Settings
+CSRF_USE_SESSIONS = True
+CSRF_COOKIE_HTTPONLY = True
 
 
 # Application definition

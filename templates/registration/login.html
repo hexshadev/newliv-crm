@@ -36,17 +36,24 @@
                     </div>
                 {% endif %}
 
-                <form method="post" class="login-form needs-validation" novalidate>
+                <form method="post" action="{% url 'login' %}" class="login-form needs-validation" novalidate>
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
                     
                     <div class="form-floating mb-3">
                         <input type="text" class="form-control" id="id_username" name="username" placeholder="Usuário" required>
                         <label for="id_username">Usuário</label>
+                        <div class="invalid-feedback">
+                            Por favor, informe seu usuário.
+                        </div>
                     </div>
                     
                     <div class="form-floating mb-4">
                         <input type="password" class="form-control" id="id_password" name="password" placeholder="Senha" required>
                         <label for="id_password">Senha</label>
+                        <div class="invalid-feedback">
+                            Por favor, informe sua senha.
+                        </div>
                     </div>
                     
                     <div class="d-grid gap-2">
